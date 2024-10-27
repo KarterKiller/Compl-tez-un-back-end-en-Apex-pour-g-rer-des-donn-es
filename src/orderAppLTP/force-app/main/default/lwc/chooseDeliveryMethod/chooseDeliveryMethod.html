@@ -1,0 +1,60 @@
+<template>
+    <lightning-card title="Options de Livraison">
+        <div class="slds-p-around_medium">
+            <!-- Liste déroulante pour sélectionner le pays de livraison -->
+            <div class="slds-form-element slds-m-bottom_medium">
+                <lightning-combobox
+                    name="country"
+                    label="Choisissez le pays de livraison"
+                    value={deliveryCountry}
+                    placeholder="Sélectionner un pays"
+                    options={countryOptions}
+                    onchange={handleCountryChange}>
+                </lightning-combobox>
+            </div>
+
+            <!-- Section pour le transporteur avec le prix le moins cher -->
+            <div class="slds-form-element slds-m-top_medium">
+                <label class="slds-form-element__label">Transporteur le moins cher</label>
+                <div class="slds-form-element__control">
+                    <div class="slds-box slds-theme_default">
+                        <p><strong>Transporteur :</strong> {cheapestTransporterName}</p>
+                        <p><strong>Prix :</strong> {cheapestPrice} EUR</p>
+                        <p><strong>Délai :</strong> {cheapestDeliveryTime} jours</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section pour le transporteur le plus rapide -->
+            <div class="slds-form-element slds-m-top_medium">
+                <label class="slds-form-element__label">Transporteur le plus rapide</label>
+                <div class="slds-form-element__control">
+                    <div class="slds-box slds-theme_default">
+                        <p><strong>Transporteur :</strong> {fastestTransporterName}</p>
+                        <p><strong>Prix :</strong> {fastestPrice} EUR</p>
+                        <p><strong>Délai :</strong> {fastestDeliveryTime} jours</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Liste déroulante pour sélectionner une commande prête -->
+            <div class="slds-form-element slds-m-top_medium">
+                <lightning-combobox
+                    name="orders"
+                    label="Sélectionner une commande prête"
+                    value={selectedOrderId}
+                    placeholder="Choisissez une commande prête"
+                    options={readyOrders}
+                    onchange={handleOrderSelection}>
+                </lightning-combobox>
+            </div>
+
+            <!-- Bouton pour confirmer le choix et lancer la livraison -->
+            <div class="slds-m-top_medium">
+                <lightning-button label="Confirmer la Livraison" variant="brand" onclick={confirmDelivery} disabled={isLoading}></lightning-button>
+            </div>
+
+        </div>
+    </lightning-card>
+    
+</template>
