@@ -49,6 +49,18 @@
                 </lightning-combobox>
             </div>
 
+            <!-- Liste déroulante pour sélectionner un transporteur compatible -->
+            <div class="slds-form-element slds-m-top_medium">
+                <lightning-combobox
+                    name="compatibleTransporters"
+                    label="Sélectionner un transporteur"
+                    value={selectedTransporterId}
+                    placeholder="Sélectionnez un transporteur"
+                    options={compatibleTransporters}
+                    onchange={handleTransporterSelection}>
+                </lightning-combobox>
+            </div>
+
             <!-- Bouton pour confirmer le choix et lancer la livraison -->
             <div class="slds-m-top_medium">
                 <lightning-button label="Confirmer la Livraison" variant="brand" onclick={confirmDelivery} disabled={isLoading}></lightning-button>
@@ -56,5 +68,4 @@
 
         </div>
     </lightning-card>
-    
 </template>

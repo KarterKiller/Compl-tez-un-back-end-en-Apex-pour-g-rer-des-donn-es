@@ -23,7 +23,7 @@ public with sharing class OrderValidationHandler {
             }
 
             // Vérifier si le pays de livraison est renseigné
-            if (orderRecord.ShippingCountry__c == null) {
+            if (orderRecord.ShippingCountry == null) {
                 validationErrors.put(orderRecord.Id, 'Le pays de livraison est requis pour cette commande.');
                 continue;
             }

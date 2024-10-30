@@ -71,6 +71,70 @@ public with sharing class TransporterSelector {
         }
     }
 
+    // Méthode pour récupérer les transporteurs compatibles avec le type de client
+    @AuraEnabled(cacheable=true)
+    public static List<Map<String, String>> getCompatibleTransporters(String customerType) {
+        try {
+            // Afficher le type de client sélectionné
+            System.debug('Valeur de customerType : ' + customerType);
+    
+            // Initialiser la liste de transporteurs compatibles
+            List<Transporter__c> transporters = new List<Transporter__c>();
+    
+            // Filtrer les transporteurs selon le type de client
+            if (customerType != null && customerType.trim().equalsIgnoreCase('Particulier')) {
+                System.debug('Filtrage pour client de type Particulier');
+                transporters = [
+                    SELECT Id, Name, CustomerType__c
+                    FROM Transporter__c
+                    WHERE CustomerType__c = 'Particulier' 
+                    OR CustomerType__c = 'Particulier et Professionnel'
+                    ORDER BY Name ASC 
+                ];
+            } else if (customerType != null && customerType.trim().equalsIgnoreCase('Professionnel')) {
+                System.debug('Filtrage pour client de type Professionnel');
+                transporters = [
+                    SELECT Id, Name, CustomerType__c
+                    FROM Transporter__c
+                    WHERE CustomerType__c = 'Professionnel' 
+                    OR CustomerType__c = 'Particulier et Professionnel'
+                    ORDER BY Name ASC
+                ];
+            } else {
+                System.debug('Erreur : Type de client non reconnu');
+                throw new AuraHandledException('Type de client non reconnu');
+            }
+    
+            // Vérifier s'il y a des transporteurs compatibles
+            System.debug('Nombre de transporteurs compatibles trouvés : ' + transporters.size());
+            for (Transporter__c transporter : transporters) {
+                System.debug('Transporteur trouvé : ' + transporter.Name + ' - Type : ' + transporter.CustomerType__c);
+            }
+            
+            if (transporters.isEmpty()) {
+                throw new AuraHandledException('Aucun transporteur compatible trouvé pour le type de client sélectionné.');
+            }
+    
+            // Créer une liste de maps (label-value pairs) pour la barre déroulante
+            List<Map<String, String>> compatibleTransporters = new List<Map<String, String>>();
+            for (Transporter__c transporter : transporters) {
+                Map<String, String> transporterMap = new Map<String, String>{
+                    'label' => transporter.Name,
+                    'value' => transporter.Id
+                };
+                System.debug('Ajout de transporteur dans la liste : ' + transporterMap);
+                compatibleTransporters.add(transporterMap);
+            }
+    
+            System.debug('Liste finale de transporteurs compatibles : ' + compatibleTransporters);
+            return compatibleTransporters;
+        } catch (Exception e) {
+            System.debug('Erreur lors de la récupération des transporteurs compatibles : ' + e.getMessage());
+            throw new AuraHandledException('Erreur lors de la récupération des transporteurs compatibles : ' + e.getMessage());
+        }
+    }
+    
+     
     
     // Méthode pour récupérer le transporteur le plus rapide pour un pays donné
     @AuraEnabled(cacheable=true)

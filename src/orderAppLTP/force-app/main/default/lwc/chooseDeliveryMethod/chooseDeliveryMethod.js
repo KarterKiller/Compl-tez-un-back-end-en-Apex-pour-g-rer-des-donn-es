@@ -1,10 +1,12 @@
 import { LightningElement, api, wire, track } from 'lwc';
 import getCheapestTransporter from '@salesforce/apex/TransporterSelector.getCheapestTransporter';
 import getFastestTransporter from '@salesforce/apex/TransporterSelector.getFastestTransporter';
+import getAccountDetails from '@salesforce/apex/OrderService.getAccountDetails';
 import { refreshApex } from '@salesforce/apex';
 import getReadyOrders from '@salesforce/apex/OrderService.getReadyOrders';
 import launchDelivery from '@salesforce/apex/OrderService.launchDelivery';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import getCompatibleTransporters from '@salesforce/apex/TransporterSelector.getCompatibleTransporters';
 
 export default class DeliveryLaunchInterface extends LightningElement {
     @track orders = []; // Liste des commandes disponibles
@@ -18,6 +20,9 @@ export default class DeliveryLaunchInterface extends LightningElement {
     @track fastestPrice;
     @track fastestDeliveryTime;
     @track readyOrders = []; // Liste des commandes prêtes à être livrées
+    @track customerType; // Type de client associé à la commande
+    @track selectedTransporterId;
+    @track compatibleTransporters = []; // Liste des transporteurs compatibles
 
     // Liste des options de pays disponibles
     countryOptions = [
@@ -27,37 +32,76 @@ export default class DeliveryLaunchInterface extends LightningElement {
         { label: 'Luxembourg', value: 'Luxembourg' }
     ];
 
-
     // Récupérer les commandes prêtes pour la livraison
     @wire(getReadyOrders)
-wiredOrders({ error, data }) {
-    if (data) {
-        console.log('Commandes prêtes récupérées : ', data);
-        this.readyOrders = [
-            { label: 'Commande Test', value: '001000000000001' }, // Option statique pour test
-            ...data.map(order => ({
-                label: order.Name,
-                value: order.Id
-            }))
-        ];
-        console.log('Options de la combobox :', this.readyOrders);
-    } else if (error) {
-        console.error('Erreur lors de la récupération des commandes prêtes : ', error);
-        this.showToast('Erreur', 'Erreur lors de la récupération des commandes prêtes : ' + error.body.message, 'error');
+    wiredOrders({ error, data }) {
+        if (data) {
+            console.log('Commandes prêtes récupérées : ', data);
+            this.readyOrders = [
+                { label: 'Commande Test', value: '001000000000001' }, // Option statique pour test
+                ...data.map(order => ({
+                    label: order.Name,
+                    value: order.Id
+                }))
+            ];
+            console.log('Options de la combobox :', this.readyOrders);
+        } else if (error) {
+            console.error('Erreur lors de la récupération des commandes prêtes : ', error);
+            this.showToast('Erreur', 'Erreur lors de la récupération des commandes prêtes : ' + error.body.message, 'error');
+        }
     }
-}
+
+    // Gérer la sélection d'un transporteur
+    handleTransporterSelection(event) {
+        this.selectedTransporterId = event.detail.value;
+        console.log('Transporteur sélectionné :', this.selectedTransporterId);
+    }
+
     // Gestionnaire de changement de pays
     handleCountryChange(event) {
         this.deliveryCountry = event.detail.value;
         console.log('Pays sélectionné :', this.deliveryCountry);
-        
         this.getTransporters();
     }
 
     // Gérer la sélection d'une commande
     handleOrderSelection(event) {
         this.selectedOrderId = event.detail.value;
-        console.log('Commande sélectionnée :', this.selectedOrderId); // OK
+        console.log('Commande sélectionnée :', this.selectedOrderId);
+
+        // Appeler la méthode pour récupérer les transporteurs compatibles après avoir obtenu le type de client
+        this.getAccountDetailsAndTransporters();
+    }
+
+    // Méthode pour récupérer le type de client et les transporteurs compatibles
+    getAccountDetailsAndTransporters() {
+        if (!this.selectedOrderId) {
+            console.error('Aucune commande sélectionnée. Impossible de récupérer les transporteurs compatibles.');
+            return;
+        }
+
+        this.isLoading = true;
+
+        // Récupérer le type de client associé à la commande
+        getAccountDetails({ orderId: this.selectedOrderId })
+            .then((result) => {
+                this.customerType = result.CustomerType__c;
+                console.log('Type de client récupéré :', this.customerType);
+
+                // Une fois le type de client récupéré, obtenir les transporteurs compatibles
+                return getCompatibleTransporters({ customerType: this.customerType });
+            })
+            .then((result) => {
+                this.compatibleTransporters = result;
+                console.log('Transporteurs compatibles récupérés :', result);
+            })
+            .catch((error) => {
+                console.error('Erreur lors de la récupération des transporteurs compatibles :', error);
+                this.showToast('Erreur', 'Impossible de récupérer les transporteurs compatibles.', 'error');
+            })
+            .finally(() => {
+                this.isLoading = false;
+            });
     }
 
     // Confirmer et lancer la livraison
@@ -67,18 +111,18 @@ wiredOrders({ error, data }) {
             return;
         }
 
-        console.log('Commande sélectionnée pour livraison : ', this.selectedOrderId); // OK
+        console.log('Commande sélectionnée pour livraison : ', this.selectedOrderId);
 
         this.isLoading = true;
         launchDelivery({ orderId: this.selectedOrderId })
             .then(() => {
-                console.log('Livraison confirmée pour la commande : ', this.selectedOrderId)
+                console.log('Livraison confirmée pour la commande : ', this.selectedOrderId);
                 this.showToast('Succès', 'La livraison a été lancée avec succès.', 'success');
                 return refreshApex(this.readyOrders); // Actualiser la liste des commandes prêtes
             })
             .catch(error => {
-                console.error('Erreur lors du lancement de la livraison :', error); //ERREUR LOG
-                this.showToast('Erreur', 'Une erreur s/est produite lors du lancement de la livraison.', 'error');
+                console.error('Erreur lors du lancement de la livraison :', error);
+                this.showToast('Erreur', 'Une erreur s\'est produite lors du lancement de la livraison.', 'error');
             })
             .finally(() => {
                 this.isLoading = false;
