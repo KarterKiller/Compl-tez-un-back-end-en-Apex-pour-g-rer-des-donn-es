@@ -2,7 +2,7 @@
 public class AccountSelectorTest {
     @isTest
     static void testGetAccountsByCountry() {
-        // Utilisation de TestDataFactory pour créer des données de test, si disponible
+        // Utilisation de TestDataFactory pour créer des données de test
         Account acc = TestDataFactory.createAccount('Test Account', 'France', 'Technology', 'Hot');
         
         Test.startTest();

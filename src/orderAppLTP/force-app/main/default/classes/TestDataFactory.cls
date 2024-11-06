@@ -14,11 +14,12 @@ public class TestDataFactory {
     }
     
     // Méthode pour créer un contrat de test
-    public static Contract createContract(Account account, Integer contractTerm, String status) {
+    public static Contract createContract(Account account, Integer contractTerm, String status, Date startDate) {
         Contract contract = new Contract(
             AccountId = account.Id,
             ContractTerm = contractTerm,
-            Status = status
+            Status = status != null ? status : 'Activated', // Définit 'Activated' par défaut
+            StartDate = startDate                   
         );
         insert contract;
         return contract;
@@ -61,13 +62,15 @@ public class TestDataFactory {
     }
     
     // Méthode pour créer un enregistrement de prix de livraison de test
-    public static Price__c createPrice(Decimal deliveryPrice, Integer deliveryTime, String country) {
+    public static Price__c createPrice(Decimal deliveryPrice, Integer deliveryTime, String country, Id transporterId) {
         Price__c price = new Price__c(
             DeliveryPrice__c = deliveryPrice,
             DeliveryTime__c = deliveryTime,
-            Country__c = country
+            Country__c = country,
+            Transporter__c = transporterId // Association du transporteur au prix de livraison
         );
         insert price;
+        System.debug('Prix créé avec ID : ' + price.Id + ', pour le pays : ' + country + ', et Transporter__c : ' + transporterId);
         return price;
     }
 
@@ -78,6 +81,7 @@ public class TestDataFactory {
             CustomerType__c = customerType
         );
         insert transporter;
+        System.debug('Transporteur créé avec ID : ' + transporter.Id);
         return transporter;
     }
     
@@ -86,7 +90,7 @@ public class TestDataFactory {
         Account acc = createAccount('Test Account', 'France', 'Technology', 'Hot');
         
         // Créer un contrat de test pour l'utiliser dans l'Order
-        Contract contract = createContract(acc, 12, 'Draft');
+        Contract contract = createContract(acc, 12, 'Draft', Date.today());
         
         // Ajouter les valeurs manquantes pour ShippingCountry, BillingCountry, et StartDate
         Order ord = createOrder(
@@ -98,9 +102,12 @@ public class TestDataFactory {
             'France' // BillingCountry
         );
         
+        // Création d'un article de commande et d'un transporteur pour le test
         OrderItem orderItem = createOrderItem(ord, 1, 100.00);
-        createDelivery(ord, 'En cours', Date.today().addDays(5));
-        createPrice(50, 3, 'France');
-        createTransporter('Transporter 1', 'Particulier');
+        Delivery__c delivery = createDelivery(ord, 'En cours', Date.today().addDays(5));
+        
+        // Créer le transporteur et le lier au prix de livraison
+        Transporter__c transporter = createTransporter('Transporter 1', 'Particulier');
+        createPrice(50, 3, 'France', transporter.Id); // Lien entre le prix et le transporteur
     }
 }
