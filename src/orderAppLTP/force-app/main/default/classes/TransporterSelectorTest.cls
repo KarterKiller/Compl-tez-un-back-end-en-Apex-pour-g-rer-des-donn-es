@@ -59,6 +59,36 @@ public class TransporterSelectorTest {
     
     System.debug('Fin du test testGetFastestTransporter');
     }
-}
 
+  
+    
+        // Test pour vérifier la création de la liste de transporteurs compatibles pour le type 'Particulier'
+        @isTest
+        static void testCompatibleTransportersMapCreation() {
+            // Création de données de test pour les transporteurs
+            Transporter__c transporter1 = new Transporter__c(Name = 'Transporteur Particulier', CustomerType__c = 'Particulier');
+            Transporter__c transporter2 = new Transporter__c(Name = 'Transporteur Particulier et Professionnel', CustomerType__c = 'Particulier et Professionnel');
+            Transporter__c transporter3 = new Transporter__c(Name = 'Transporteur Professionnel', CustomerType__c = 'Professionnel');
+            
+            insert new List<Transporter__c>{ transporter1, transporter2, transporter3 };
+    
+            Test.startTest();
+            // Appeler la méthode de récupération des transporteurs compatibles pour un type particulier
+            List<Map<String, String>> compatibleTransporters = TransporterSelector.getCompatibleTransporters('Particulier');
+            Test.stopTest();
+    
+            // Vérifier que seuls les transporteurs 'Particulier' et 'Particulier et Professionnel' sont récupérés
+            System.assertEquals(2, compatibleTransporters.size(), 'Le nombre de transporteurs compatibles devrait être 2.');
+    
+            // Vérifier le contenu du premier transporteur (Particulier)
+            Map<String, String> transporterMap1 = compatibleTransporters[0];
+            System.assertEquals('Transporteur Particulier', transporterMap1.get('label'), 'Le label devrait être "Transporteur Particulier".');
+            System.assertEquals(transporter1.Id, transporterMap1.get('value'), 'Le value devrait être l\'ID du transporteur particulier.');
+    
+            // Vérifier le contenu du deuxième transporteur (Particulier et Professionnel)
+            Map<String, String> transporterMap2 = compatibleTransporters[1];
+            System.assertEquals('Transporteur Particulier et Professionnel', transporterMap2.get('label'), 'Le label devrait être "Transporteur Particulier et Professionnel".');
+            System.assertEquals(transporter2.Id, transporterMap2.get('value'), 'Le value devrait être l\'ID du transporteur particulier et professionnel.');
+        }
+    }
     

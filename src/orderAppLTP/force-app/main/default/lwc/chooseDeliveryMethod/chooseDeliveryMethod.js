@@ -36,7 +36,7 @@ export default class DeliveryLaunchInterface extends LightningElement {
     @wire(getReadyOrders)
     wiredOrders({ error, data }) {
         if (data) {
-            console.log('Commandes prêtes récupérées : ', data);
+            //console.log('Commandes prêtes récupérées : ', data);
             this.readyOrders = [
                 { label: 'Commande Test', value: '001000000000001' }, // Option statique pour test
                 ...data.map(order => ({
@@ -44,7 +44,7 @@ export default class DeliveryLaunchInterface extends LightningElement {
                     value: order.Id
                 }))
             ];
-            console.log('Options de la combobox :', this.readyOrders);
+            //console.log('Options de la combobox :', this.readyOrders);
         } else if (error) {
             console.error('Erreur lors de la récupération des commandes prêtes : ', error);
             this.showToast('Erreur', 'Erreur lors de la récupération des commandes prêtes : ' + error.body.message, 'error');
@@ -54,13 +54,13 @@ export default class DeliveryLaunchInterface extends LightningElement {
     // Gérer la sélection d'un transporteur
     handleTransporterSelection(event) {
         this.selectedTransporterId = event.detail.value;
-        console.log('Transporteur sélectionné :', this.selectedTransporterId);
+        //console.log('Transporteur sélectionné :', this.selectedTransporterId);
     }
 
     // Gestionnaire de changement de pays
     handleCountryChange(event) {
         this.deliveryCountry = event.detail.value;
-        console.log('Pays sélectionné :', this.deliveryCountry);
+        //console.log('Pays sélectionné :', this.deliveryCountry);
         this.getTransporters();
     }
 
@@ -86,14 +86,14 @@ export default class DeliveryLaunchInterface extends LightningElement {
         getAccountDetails({ orderId: this.selectedOrderId })
             .then((result) => {
                 this.customerType = result.CustomerType__c;
-                console.log('Type de client récupéré :', this.customerType);
+                //console.log('Type de client récupéré :', this.customerType);
 
                 // Une fois le type de client récupéré, obtenir les transporteurs compatibles
                 return getCompatibleTransporters({ customerType: this.customerType });
             })
             .then((result) => {
                 this.compatibleTransporters = result;
-                console.log('Transporteurs compatibles récupérés :', result);
+                //console.log('Transporteurs compatibles récupérés :', result);
             })
             .catch((error) => {
                 console.error('Erreur lors de la récupération des transporteurs compatibles :', error);
@@ -116,7 +116,7 @@ export default class DeliveryLaunchInterface extends LightningElement {
         this.isLoading = true;
         launchDelivery({ orderId: this.selectedOrderId })
             .then(() => {
-                console.log('Livraison confirmée pour la commande : ', this.selectedOrderId);
+                //console.log('Livraison confirmée pour la commande : ', this.selectedOrderId); 
                 this.showToast('Succès', 'La livraison a été lancée avec succès.', 'success');
                 return refreshApex(this.readyOrders); // Actualiser la liste des commandes prêtes
             })

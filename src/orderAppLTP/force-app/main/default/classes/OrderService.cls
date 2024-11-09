@@ -2,56 +2,42 @@ public with sharing class OrderService {
 
     // Méthode pour valider une commande avant le lancement de la livraison
     @AuraEnabled
-public static Boolean validateOrder(Id orderId) {
-    try {
-        // Vérifier les autorisations de lecture sur l'objet Order
-        if (!Schema.sObjectType.Order.isAccessible()) {
-            throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder aux commandes.');
-        }
-        
-        // Vérifier les autorisations de lecture sur les champs utilisés dans Order
-        if (!Schema.sObjectType.Order.fields.Status.isAccessible() ||
-            !Schema.sObjectType.Order.fields.EffectiveDate.isAccessible() ||
-            !Schema.sObjectType.Order.fields.AccountId.isAccessible() ||
-            !Schema.sObjectType.Order.fields.Transporter__c.isAccessible()) {
-            throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder aux champs de la commande.');
-        }
+    public static Boolean validateOrder(Id orderId) {
+        try {
+            // Vérifier les autorisations de lecture sur l'objet Order
+            if (!Schema.sObjectType.Order.isAccessible()) {
+                throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder aux commandes.');
+            }
 
-        // Vérifier les autorisations de lecture pour le champ Quantity de OrderItem
-        if (!Schema.sObjectType.OrderItem.fields.Quantity.isAccessible()) {
-            throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder aux champs de l\'article de commande.');
-        }
-        
-        // Récupérer l'enregistrement Order avec sous-requête
-        Order orderRecord = [
-            SELECT Id, Status, EffectiveDate, AccountId, Transporter__c, 
-                (SELECT Quantity FROM OrderItems)
-            FROM Order
-            WHERE Id = :orderId
-            LIMIT 1
-        ];
-        
-        // Vérifier si la commande est en statut "Draft" ou "Activated"
-        if (orderRecord.Status != 'Draft' && orderRecord.Status != 'Activated') {
-            throw new AuraHandledException('La commande doit être en statut "Draft" ou "Activated" pour être validée.');
-        }
+            // Récupérer l'enregistrement Order avec sous-requête
+            Order orderRecord = [
+                SELECT Id, Status, EffectiveDate, AccountId, Transporter__c, 
+                    (SELECT Quantity FROM OrderItems)
+                FROM Order
+                WHERE Id = :orderId
+                LIMIT 1
+            ];
+            
+            // Vérifier si la commande est en statut "Draft" ou "Activated"
+            if (orderRecord.Status != 'Draft' && orderRecord.Status != 'Activated') {
+                throw new AuraHandledException('La commande doit être en statut "Draft" ou "Activated" pour être validée.');
+            }
 
-        // Vérifier si la date effective est dans le futur
-        if (orderRecord.EffectiveDate == null || orderRecord.EffectiveDate < Date.today()) {
-            throw new AuraHandledException('La date effective de la commande doit être définie et ne peut pas être dans le passé.');
-        }
+            // Vérifier si la date effective est dans le futur
+            if (orderRecord.EffectiveDate == null || orderRecord.EffectiveDate < Date.today()) {
+                throw new AuraHandledException('La date effective de la commande doit être définie et ne peut pas être dans le passé.');
+            }
 
-        // Vérifier si la commande est liée à un compte
-        if (orderRecord.AccountId == null) {
-            throw new AuraHandledException('La commande doit être associée à un compte.');
-        }
+            // Vérifier si la commande est liée à un compte
+            if (orderRecord.AccountId == null) {
+                throw new AuraHandledException('La commande doit être associée à un compte.');
+            }
 
-        return true;
-    } catch (Exception e) {
-        throw new AuraHandledException('Erreur lors de la validation de la commande : ' + e.getMessage());
+            return true;
+        } catch (Exception e) {
+            throw new AuraHandledException('Erreur lors de la validation de la commande : ' + e.getMessage());
+        }
     }
-}
-
 
     // Méthode pour lancer la livraison d'une commande
     @AuraEnabled
@@ -66,7 +52,7 @@ public static Boolean validateOrder(Id orderId) {
             }
             
             // Vérifier les autorisations de mise à jour sur l'objet Order
-            if (!Schema.sObjectType.Order.isUpdateable() || !Schema.sObjectType.Order.fields.Status.isUpdateable()) {
+            if (!Schema.sObjectType.Order.isUpdateable()) {
                 System.debug('Erreur : Permissions insuffisantes pour mettre à jour les commandes');
                 throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour mettre à jour les commandes.');
             }
@@ -80,10 +66,7 @@ public static Boolean validateOrder(Id orderId) {
             System.debug('Statut de la commande mis à jour à "En livraison" pour : ' + orderId);
 
             // Vérifier les autorisations de création sur l'objet Delivery__c
-            if (!Schema.sObjectType.Delivery__c.isCreateable() ||
-                !Schema.sObjectType.Delivery__c.fields.Order__c.isCreateable() ||
-                !Schema.sObjectType.Delivery__c.fields.Status__c.isCreateable() ||
-                !Schema.sObjectType.Delivery__c.fields.DeliveryDate__c.isCreateable()) {
+            if (!Schema.sObjectType.Delivery__c.isCreateable()) {
                 System.debug('Erreur : Permissions insuffisantes pour créer un enregistrement de livraison');
                 throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour créer des enregistrements de livraison.');
             }
@@ -113,13 +96,6 @@ public static Boolean validateOrder(Id orderId) {
             if (!Schema.sObjectType.Order.isAccessible()) {
                 throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder aux commandes.');
             }
-            
-            // Vérifier les autorisations de lecture sur les champs utilisés
-            if (!Schema.sObjectType.Order.fields.Status.isAccessible() ||
-                !Schema.sObjectType.Order.fields.AccountId.isAccessible() ||
-                !Schema.sObjectType.Order.fields.TotalAmount.isAccessible()) {
-                throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder aux champs de la commande.');
-            }
 
             return [
                 SELECT Id, OrderNumber, Name, Status, AccountId, TotalAmount
@@ -136,9 +112,9 @@ public static Boolean validateOrder(Id orderId) {
     @AuraEnabled(cacheable=true)
     public static Account getAccountDetails(Id orderId) {
         try {
-            // Vérifier les autorisations de lecture pour l'objet Order et le champ AccountId
-            if (!Schema.sObjectType.Order.isAccessible() || !Schema.sObjectType.Order.fields.AccountId.isAccessible()) {
-                throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder à la commande et ses champs.');
+            // Vérifier les autorisations de lecture pour l'objet Order
+            if (!Schema.sObjectType.Order.isAccessible()) {
+                throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder à la commande.');
             }
 
             Order orderRecord = [
@@ -149,8 +125,8 @@ public static Boolean validateOrder(Id orderId) {
             ];
 
             if (orderRecord != null && orderRecord.AccountId != null) {
-                // Vérifier les autorisations de lecture pour l'objet Account et le champ CustomerType__c
-                if (!Schema.sObjectType.Account.isAccessible() || !Schema.sObjectType.Account.fields.CustomerType__c.isAccessible()) {
+                // Vérifier les autorisations de lecture pour l'objet Account
+                if (!Schema.sObjectType.Account.isAccessible()) {
                     throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder aux détails du compte.');
                 }
 
