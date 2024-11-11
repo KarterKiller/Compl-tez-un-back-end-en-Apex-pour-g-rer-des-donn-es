@@ -355,10 +355,79 @@ static void testGetReadyOrders_Success() {
     
     System.debug('--- Fin du testGetReadyOrders_Success ---');
     }
-}
 
-  
+
+    @isTest
+static void testGetReadyOrders_NoProducts() {
+    System.debug('--- Début du testGetReadyOrders_NoProducts ---');
+
+    // Créer un compte pour lier les commandes
+    Account acc = TestDataFactory.createAccount('Test Account', 'France', 'Technology', 'Hot');
+    System.debug('Compte créé avec ID : ' + acc.Id);
+
+    // Créer un contrat en statut 'Draft' pour associer la commande
+    Contract contract = TestDataFactory.createContract(acc, 12, 'Draft', Date.today());
+    System.debug('Contrat créé avec ID : ' + contract.Id + ' et statut : ' + contract.Status);
+
+    // Créer l'Order en statut 'Activated' sans produits associés
+    Order ord = new Order(
+        AccountId = acc.Id,
+        ContractId = contract.Id,
+        Status = 'Draft',
+        EffectiveDate = Date.today(),
+        ShippingCountry = 'France',
+        BillingCountry = 'France'
+    );
+    insert ord;
+    System.debug('Commande insérée avec statut : ' + ord.Status);
+
+    Test.startTest();
+    List<Order> readyOrders = OrderService.getReadyOrders();
+    Test.stopTest();
+    System.debug('Commandes prêtes récupérées : ' + readyOrders);
+
+    // Vérifier que la liste ne contient aucune commande prête
+    System.assertEquals(0, readyOrders.size(), 'Il ne devrait y avoir aucune commande prête dans la liste.');
     
+    System.debug('--- Fin du testGetReadyOrders_NoProducts ---');
 
+    }
 
-            
+@isTest
+static void testGetReadyOrders_NotActivatedStatus() {
+    System.debug('--- Début du testGetReadyOrders_NotActivatedStatus ---');
+
+    // Créer un compte pour lier les commandes
+    Account acc = TestDataFactory.createAccount('Test Account', 'France', 'Technology', 'Hot');
+    System.debug('Compte créé avec ID : ' + acc.Id);
+
+    // Créer un contrat en statut 'Activated' pour associer la commande
+    Contract contract = TestDataFactory.createContract(acc, 12, 'Draft', Date.today());
+    System.debug('Contrat créé avec ID : ' + contract.Id + ' et statut : ' + contract.Status);
+
+    // Créer l'Order en statut 'Draft' (non activé)
+    Order ord = new Order(
+        AccountId = acc.Id,
+        ContractId = contract.Id,
+        Status = 'Draft',
+        EffectiveDate = Date.today(),
+        ShippingCountry = 'France',
+        BillingCountry = 'France'
+    );
+    insert ord;
+    System.debug('Commande insérée avec statut : ' + ord.Status);
+
+    Test.startTest();
+    List<Order> readyOrders = OrderService.getReadyOrders();
+    Test.stopTest();
+    System.debug('Commandes prêtes récupérées : ' + readyOrders);
+
+    // Vérifier que la liste ne contient aucune commande prête
+    System.assertEquals(0, readyOrders.size(), 'Il ne devrait y avoir aucune commande prête dans la liste.');
+    
+    System.debug('--- Fin du testGetReadyOrders_NotActivatedStatus ---');
+
+    }
+
+} 
+          

@@ -1,17 +1,13 @@
 public class OrderTriggerHandler {
     public static void handleAfterUpdate(List<Order> newOrders, Map<Id, Order> oldOrderMap) {
-        // Vérifier les autorisations CRUD pour Delivery__c et le champ Status__c. Mise à jour d'enregistrement order pour mettre à jour les livraisons Delivery associés
-        if (!Schema.sObjectType.Delivery__c.isAccessible() || !Schema.sObjectType.Delivery__c.fields.Status__c.isUpdateable()) {
-            throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour mettre à jour le statut des livraisons.');
-        }
 
         List<Delivery__c> deliveriesToUpdate = new List<Delivery__c>();
 
-        for (Order ord : newOrders) { //Liste des commandes mise à jour (newOrders). On va donc itérer sur cette liste avec la boucle for
-            Order oldOrder = oldOrderMap.get(ord.Id); //Commande précédente enregistré (oldOrderMap)
+        for (Order ord : newOrders) { // Liste des commandes mises à jour (newOrders)
+            Order oldOrder = oldOrderMap.get(ord.Id); // Commande précédente enregistrée (oldOrderMap)
 
             // Vérifier si le statut de la commande a changé
-            if (ord.Status != oldOrder.Status) { // vérification si la commande à changé
+            if (ord.Status != oldOrder.Status) { // vérification si la commande a changé
                 // Récupérer les livraisons associées pour mettre à jour leur statut
                 List<Delivery__c> relatedDeliveries = [
                     SELECT Id, Status__c

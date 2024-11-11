@@ -7,14 +7,6 @@ public with sharing class OrderValidationHandler {
         // Liste des erreurs à collecter pour chaque commande
         Map<Id, String> validationErrors = new Map<Id, String>();
 
-        // Vérification des permissions CRUD
-        if (!Schema.sObjectType.Order.isAccessible() || !Schema.sObjectType.Order.isQueryable()) {
-            throw new AuraHandledException('Accès refusé : l\'utilisateur n\'a pas les permissions nécessaires pour lire les enregistrements Order.');
-        }
-        if (!Schema.sObjectType.Account.isAccessible() || !Schema.sObjectType.Account.isQueryable()) {
-            throw new AuraHandledException('Accès refusé : l\'utilisateur n\'a pas les permissions nécessaires pour lire les enregistrements Account.');
-        }
-
         for (Order orderRecord : orders) {
             // Vérifier si la commande est associée à un compte
             if (orderRecord.AccountId == null) {
@@ -72,4 +64,4 @@ public with sharing class OrderValidationHandler {
             Trigger.newMap.get(orderId).addError(validationErrors.get(orderId));
         }
     }
-}      
+}

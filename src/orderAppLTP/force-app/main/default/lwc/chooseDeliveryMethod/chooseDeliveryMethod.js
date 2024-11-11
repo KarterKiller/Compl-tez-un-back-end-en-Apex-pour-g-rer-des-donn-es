@@ -67,7 +67,7 @@ export default class DeliveryLaunchInterface extends LightningElement {
     // Gérer la sélection d'une commande
     handleOrderSelection(event) {
         this.selectedOrderId = event.detail.value;
-        console.log('Commande sélectionnée :', this.selectedOrderId);
+        //console.log('Commande sélectionnée :', this.selectedOrderId);
 
         // Appeler la méthode pour récupérer les transporteurs compatibles après avoir obtenu le type de client
         this.getAccountDetailsAndTransporters();
