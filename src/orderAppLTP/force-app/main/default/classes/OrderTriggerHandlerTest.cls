@@ -68,4 +68,41 @@ public class OrderTriggerHandlerTest {
         System.assertEquals('En cours', updatedDelivery.Status__c, 'Le statut de la livraison devrait être mis à jour en "En cours".');
         System.debug('Fin du test testHandleAfterUpdate');
     }
+
+    
+    // Méthode de test pour vérifier qu'aucune mise à jour n'est effectuée lorsque le statut de la commande ne change pas
+    @isTest
+    static void testHandleAfterUpdate_NoStatusChange() {
+        // Créer un compte et un contrat
+        Account acc = new Account(Name = 'Test Account');
+        insert acc;
+        
+        Contract contract = new Contract(AccountId = acc.Id, Status = 'Draft', StartDate = Date.today());
+        insert contract;
+
+        // Créer une commande avec statut "Activated" et associer un PriceBook
+        Id standardPricebookId = Test.getStandardPricebookId();
+        Order ord = new Order(
+            AccountId = acc.Id,
+            ContractId = contract.Id,
+            Status = 'draft',
+            EffectiveDate = Date.today(),
+            Pricebook2Id = standardPricebookId,
+            ShippingCountry = 'France',
+            BillingCountry = 'France'
+        );
+        insert ord;
+
+        // Créer une livraison associée à la commande
+        Delivery__c delivery = new Delivery__c(Order__c = ord.Id, Status__c = 'En cours');
+        insert delivery;
+
+        // Mise à jour de la commande sans changement de statut
+        ord.EffectiveDate = Date.today().addDays(1); // Changement mineur sans modification du statut
+        update ord;
+
+        // Requête pour vérifier que le statut de la livraison n'a pas changé
+        Delivery__c unchangedDelivery = [SELECT Status__c FROM Delivery__c WHERE Id = :delivery.Id];
+        System.assertEquals('En cours', unchangedDelivery.Status__c, 'Le statut de la livraison ne devrait pas changer si le statut de la commande ne change pas.');
+    }
 }

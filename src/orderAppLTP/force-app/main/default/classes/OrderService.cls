@@ -22,10 +22,6 @@ public with sharing class OrderService {
             throw new AuraHandledException('La commande doit être en statut "Draft" ou "Activated" pour être validée.');
         }
 
-        // Vérifier si la date effective est dans le futur
-        if (orderRecord.EffectiveDate == null || orderRecord.EffectiveDate < Date.today()) {
-            throw new AuraHandledException('La date effective de la commande doit être définie et ne peut pas être dans le passé.');
-        }
 
         // Vérifier si la commande est liée à un compte
         if (orderRecord.AccountId == null) {
@@ -46,11 +42,6 @@ public with sharing class OrderService {
             throw new AuraHandledException('La commande n\'est pas valide pour le lancement de la livraison.');
         }
         
-        // Vérifier les autorisations de mise à jour sur l'objet Order
-        if (!Schema.sObjectType.Order.isUpdateable()) {
-            System.debug('Erreur : Permissions insuffisantes pour mettre à jour les commandes');
-            throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour mettre à jour les commandes.');
-        }
 
         // Mettre à jour le statut de la commande à "En livraison"
         Order orderToUpdate = new Order(
@@ -79,51 +70,38 @@ public with sharing class OrderService {
     }
 
     // Méthode pour récupérer les commandes prêtes pour la livraison
-    @AuraEnabled(cacheable=true)
-    public static List<Order> getReadyOrders() {
-        // Vérifier les autorisations de lecture sur l'objet Order
-        if (!Schema.sObjectType.Order.isAccessible()) {
-            throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder aux commandes.');
-        }
+@AuraEnabled(cacheable=true)
+public static List<Order> getReadyOrders() {
+    return [
+        SELECT Id, OrderNumber, Name, Status, AccountId, TotalAmount
+        FROM Order
+        WHERE Status = 'Activated'
+        ORDER BY CreatedDate DESC
+    ];
+}
 
-        return [
-            SELECT Id, OrderNumber, Name, Status, AccountId, TotalAmount
-            FROM Order
-            WHERE Status = 'Activated'
-            ORDER BY CreatedDate DESC
-        ];
-    }
+    
+@AuraEnabled(cacheable=true)
+public static Account getAccountDetails(Id orderId) {
+    // Récupérer l'enregistrement de commande avec l'ID de compte associé
+    Order orderRecord = [
+        SELECT AccountId
+        FROM Order
+        WHERE Id = :orderId
+        LIMIT 1
+    ];
 
-    // Méthode pour récupérer les détails du compte associé à une commande
-    @AuraEnabled(cacheable=true)
-    public static Account getAccountDetails(Id orderId) {
-        // Vérifier les autorisations de lecture pour l'objet Order
-        if (!Schema.sObjectType.Order.isAccessible()) {
-            throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder à la commande.');
-        }
-
-        Order orderRecord = [
-            SELECT AccountId
-            FROM Order
-            WHERE Id = :orderId
+    if (orderRecord != null && orderRecord.AccountId != null) {
+        // Récupérer les détails du compte associé
+        Account accountRecord = [
+            SELECT Id, CustomerType__c
+            FROM Account
+            WHERE Id = :orderRecord.AccountId
             LIMIT 1
         ];
-
-        if (orderRecord != null && orderRecord.AccountId != null) {
-            // Vérifier les autorisations de lecture pour l'objet Account
-            if (!Schema.sObjectType.Account.isAccessible()) {
-                throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder aux détails du compte.');
-            }
-
-            Account accountRecord = [
-                SELECT Id, CustomerType__c
-                FROM Account
-                WHERE Id = :orderRecord.AccountId
-                LIMIT 1
-            ];
-            return accountRecord;
-        } else {
-            throw new AuraHandledException('Aucun compte associé à cette commande.');
-        }
+        return accountRecord;
+    } else {
+        throw new AuraHandledException('Aucun compte associé à cette commande.');
     }
+ }
 }

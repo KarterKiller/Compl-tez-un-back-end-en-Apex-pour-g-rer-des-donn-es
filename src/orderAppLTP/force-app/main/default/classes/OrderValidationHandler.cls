@@ -8,12 +8,7 @@ public with sharing class OrderValidationHandler {
         Map<Id, String> validationErrors = new Map<Id, String>();
 
         for (Order orderRecord : orders) {
-            // Vérifier si la commande est associée à un compte
-            if (orderRecord.AccountId == null) {
-                validationErrors.put(orderRecord.Id, 'La commande doit être associée à un compte.');
-                continue;
-            }
-
+           
             // Vérifier si le pays de livraison est renseigné
             if (orderRecord.ShippingCountry == null) {
                 validationErrors.put(orderRecord.Id, 'Le pays de livraison est requis pour cette commande.');
@@ -38,7 +33,7 @@ public with sharing class OrderValidationHandler {
                     LIMIT 1
                 ];
 
-                // Définir le nombre minimum de produits requis en fonction du type de client
+                
                 Integer minProductsRequired = 0;
                 if (accountRecord.CustomerType__c == 'Particulier') {
                     minProductsRequired = minProductsForParticulier;
