@@ -16,7 +16,7 @@ public with sharing class TransporterSelector {
     // Méthode pour récupérer le transporteur avec le prix le plus bas pour un pays donné
     @AuraEnabled(cacheable=true)
     public static TransporterDetailsWrapper getCheapestTransporter(String country) {
-        System.debug('Début de la méthode getCheapestTransporter pour le pays : ' + country);
+        //System.debug('Début de la méthode getCheapestTransporter pour le pays : ' + country);
 
         // Requête pour obtenir le transporteur associé avec le prix de livraison le moins cher dans l'objet Price__c 
         List<Price__c> priceRecords = [
@@ -30,7 +30,7 @@ public with sharing class TransporterSelector {
         System.debug('Résultats de la requête Price__c : ' + priceRecords);
 
         if (!priceRecords.isEmpty() && priceRecords[0].Transporter__c != null) {
-            System.debug('ID du transporteur trouvé : ' + priceRecords[0].Transporter__c);
+            //System.debug('ID du transporteur trouvé : ' + priceRecords[0].Transporter__c);
 
             // Charger le transporteur correspondant via le champ Lookup Transporter__c
             Transporter__c transporter = [
@@ -49,7 +49,7 @@ public with sharing class TransporterSelector {
                 priceRecords[0].DeliveryTime__c
             );
         } else {
-            System.debug('Aucun enregistrement trouvé dans Price__c pour le pays : ' + country);
+            //System.debug('Aucun enregistrement trouvé dans Price__c pour le pays : ' + country);
             return null;
         }
     }
@@ -57,14 +57,14 @@ public with sharing class TransporterSelector {
     // Méthode pour récupérer les transporteurs compatibles avec le type de client
     @AuraEnabled(cacheable=true)
     public static List<Map<String, String>> getCompatibleTransporters(String customerType) {
-        System.debug('Valeur de customerType : ' + customerType);
+        //System.debug('Valeur de customerType : ' + customerType);
     
         // Initialiser la liste de transporteurs compatibles
         List<Transporter__c> transporters = new List<Transporter__c>();
     
         // Filtrer les transporteurs selon le type de client
         if (customerType != null && customerType.trim().equalsIgnoreCase('Particulier')) {
-            System.debug('Filtrage pour client de type Particulier');
+            //System.debug('Filtrage pour client de type Particulier');
             transporters = [
                 SELECT Id, Name, CustomerType__c
                 FROM Transporter__c
@@ -73,7 +73,7 @@ public with sharing class TransporterSelector {
                 ORDER BY Name ASC 
             ];
         } else if (customerType != null && customerType.trim().equalsIgnoreCase('Professionnel')) {
-            System.debug('Filtrage pour client de type Professionnel');
+            //System.debug('Filtrage pour client de type Professionnel');
             transporters = [
                 SELECT Id, Name, CustomerType__c
                 FROM Transporter__c
@@ -82,7 +82,7 @@ public with sharing class TransporterSelector {
                 ORDER BY Name ASC
             ];
         } else {
-            System.debug('Erreur : Type de client non reconnu');
+            //System.debug('Erreur : Type de client non reconnu');
             return new List<Map<String, String>>();
         }
     
@@ -95,18 +95,18 @@ public with sharing class TransporterSelector {
                 'label' => transporter.Name,
                 'value' => transporter.Id
             };
-            System.debug('Ajout de transporteur dans la liste : ' + transporterMap);
+            //System.debug('Ajout de transporteur dans la liste : ' + transporterMap);
             compatibleTransporters.add(transporterMap);
         }
 
-        System.debug('Liste finale de transporteurs compatibles : ' + compatibleTransporters);
+        //System.debug('Liste finale de transporteurs compatibles : ' + compatibleTransporters);
         return compatibleTransporters;
     }
 
     // Méthode pour récupérer le transporteur le plus rapide pour un pays donné
     @AuraEnabled(cacheable=true)
     public static TransporterDetailsWrapper getFastestTransporter(String country) {
-        System.debug('Début de la méthode getFastestTransporter pour le pays : ' + country);
+        //System.debug('Début de la méthode getFastestTransporter pour le pays : ' + country);
 
         // Requête pour obtenir le transporteur associé avec le délai de livraison le plus court dans l'objet Price__c
         List<Price__c> priceRecords = [
@@ -117,10 +117,10 @@ public with sharing class TransporterSelector {
             LIMIT 1
         ];
 
-        System.debug('Résultats de la requête Price__c : ' + priceRecords);
+        //System.debug('Résultats de la requête Price__c : ' + priceRecords);
 
         if (!priceRecords.isEmpty() && priceRecords[0].Transporter__c != null) {
-            System.debug('ID du transporteur le plus rapide trouvé : ' + priceRecords[0].Transporter__c);
+            //System.debug('ID du transporteur le plus rapide trouvé : ' + priceRecords[0].Transporter__c);
 
             // Charger le transporteur correspondant via le champ Lookup Transporter__c
             Transporter__c transporter = [
@@ -130,7 +130,7 @@ public with sharing class TransporterSelector {
                 LIMIT 1
             ];
 
-            System.debug('Transporter récupéré : ' + transporter);
+            //System.debug('Transporter récupéré : ' + transporter);
 
             // Créer un objet Wrapper contenant les informations à renvoyer
             return new TransporterDetailsWrapper(
@@ -139,7 +139,7 @@ public with sharing class TransporterSelector {
                 priceRecords[0].DeliveryTime__c
             );
         } else {
-            System.debug('Aucun enregistrement trouvé dans Price__c pour le pays : ' + country);
+            //System.debug('Aucun enregistrement trouvé dans Price__c pour le pays : ' + country);
             return null;
         }
     }

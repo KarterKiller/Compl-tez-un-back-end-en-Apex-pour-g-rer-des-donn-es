@@ -70,7 +70,7 @@ public class TestDataFactory {
             Transporter__c = transporterId // Association du transporteur au prix de livraison
         );
         insert price;
-        System.debug('Prix créé avec ID : ' + price.Id + ', pour le pays : ' + country + ', et Transporter__c : ' + transporterId);
+        //System.debug('Prix créé avec ID : ' + price.Id + ', pour le pays : ' + country + ', et Transporter__c : ' + transporterId);
         return price;
     }
 
@@ -81,7 +81,7 @@ public class TestDataFactory {
             CustomerType__c = customerType
         );
         insert transporter;
-        System.debug('Transporteur créé avec ID : ' + transporter.Id);
+        //System.debug('Transporteur créé avec ID : ' + transporter.Id);
         return transporter;
     }
     
