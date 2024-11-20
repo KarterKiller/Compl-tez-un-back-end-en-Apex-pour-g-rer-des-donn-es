@@ -106,27 +106,33 @@ export default class DeliveryLaunchInterface extends LightningElement {
 
     // Confirmer et lancer la livraison
     confirmDelivery() {
-        if (!this.selectedOrderId) {
-            this.showToast('Erreur', 'Veuillez sélectionner une commande.', 'error');
-            return;
-        }
+    if (!this.selectedOrderId) {
+        this.showToast('Erreur', 'Veuillez sélectionner une commande.', 'error');
+        return;
+    }
 
-        console.log('Commande sélectionnée pour livraison : ', this.selectedOrderId);
+    if (!this.selectedTransporterId) {
+        this.showToast('Erreur', 'Veuillez sélectionner un transporteur.', 'error');
+        return;
+    }
 
-        this.isLoading = true;
-        launchDelivery({ orderId: this.selectedOrderId })
-            .then(() => {
-                //console.log('Livraison confirmée pour la commande : ', this.selectedOrderId); 
-                this.showToast('Succès', 'La livraison a été lancée avec succès.', 'success');
-                return refreshApex(this.readyOrders); // Actualiser la liste des commandes prêtes
-            })
-            .catch(error => {
-                console.error('Erreur lors du lancement de la livraison :', error);
-                this.showToast('Erreur', 'Une erreur s\'est produite lors du lancement de la livraison.', 'error');
-            })
-            .finally(() => {
-                this.isLoading = false;
-            });
+    console.log('Commande sélectionnée pour livraison : ', this.selectedOrderId);
+    console.log('Transporteur sélectionné pour livraison : ', this.selectedTransporterId);
+
+    this.isLoading = true;
+    launchDelivery({ orderId: this.selectedOrderId, transporterId: this.selectedTransporterId })
+        .then(() => {
+            this.showToast('Succès', 'La livraison a été lancée avec succès.', 'success');
+            return refreshApex(this.readyOrders); // Actualiser la liste des commandes prêtes
+        })
+        .catch(error => {
+            console.error('Erreur lors du lancement de la livraison :', error);
+            this.showToast('Erreur', 'Une erreur s\'est produite lors du lancement de la livraison.', 'error');
+        })
+        .finally(() => {
+            this.isLoading = false;
+        });
+
     }
 
     // Récupérer les transporteurs les moins chers et les plus rapides 

@@ -31,43 +31,52 @@ public with sharing class OrderService {
         return true;
     }
 
-    // Méthode pour lancer la livraison d'une commande
-    @AuraEnabled
-    public static void launchDelivery(Id orderId) {
-        System.debug('Début de la méthode launchDelivery pour la commande : ' + orderId);
+   // Méthode pour lancer la livraison d'une commande
+   @AuraEnabled
+   public static void launchDelivery(Id orderId, Id transporterId) {
+       System.debug('--- Début de la méthode launchDelivery ---');
+       System.debug('Commande ID : ' + orderId);
+       System.debug('Transporteur ID : ' + transporterId);
+   
+       // Valider la commande avant de lancer la livraison
+       if (!validateOrder(orderId)) {
+           System.debug('Validation échouée pour la commande ID : ' + orderId);
+           throw new AuraHandledException('La commande n\'est pas valide pour le lancement de la livraison.');
+       }
+   
+       // Mettre à jour le statut de la commande à "En livraison"
+       try {
+           Order orderToUpdate = new Order(
+               Id = orderId,
+               Status = 'En livraison'
+           );
+           update orderToUpdate;
+           System.debug('Commande mise à jour avec le statut "En livraison".');
+       } catch (Exception e) {
+           System.debug('Erreur lors de la mise à jour de la commande : ' + e.getMessage());
+           throw new AuraHandledException('Erreur lors de la mise à jour de la commande : ' + e.getMessage());
+       }
+   
+       // Créer l'enregistrement de livraison associé avec le transporteur
+       try {
+           Delivery__c newDelivery = new Delivery__c(
+               Order__c = orderId,
+               Status__c = 'En cours',
+               DeliveryDate__c = Date.today().addDays(5),
+               Transporter__c = transporterId // Associer le transporteur sélectionné
+           );
+           insert newDelivery;
+           System.debug('Livraison créée avec transporteur ID : ' + transporterId);
+       } catch (Exception e) {
+           System.debug('Erreur lors de la création de la livraison : ' + e.getMessage());
+           throw new AuraHandledException('Erreur lors de la création de la livraison : ' + e.getMessage());
+       }
+   
+       System.debug('--- Fin de la méthode launchDelivery ---');
+   }
+   
 
-        // Valider la commande avant de lancer la livraison
-        if (!validateOrder(orderId)) {
-            System.debug('Validation échouée pour la commande : ' + orderId);
-            throw new AuraHandledException('La commande n\'est pas valide pour le lancement de la livraison.');
-        }
-        
 
-        // Mettre à jour le statut de la commande à "En livraison"
-        Order orderToUpdate = new Order(
-            Id = orderId,
-            Status = 'En livraison'
-        );
-        update orderToUpdate;
-        System.debug('Statut de la commande mis à jour à "En livraison" pour : ' + orderId);
-
-        // Vérifier les autorisations de création sur l'objet Delivery__c
-        if (!Schema.sObjectType.Delivery__c.isCreateable()) {
-            System.debug('Erreur : Permissions insuffisantes pour créer un enregistrement de livraison');
-            throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour créer des enregistrements de livraison.');
-        }
-
-        // Créer l'enregistrement de livraison associé
-        Delivery__c newDelivery = new Delivery__c(
-            Order__c = orderId,
-            Status__c = 'En cours',
-            DeliveryDate__c = Date.today().addDays(5)
-        );
-        insert newDelivery;
-        System.debug('Enregistrement de livraison créé et inséré pour la commande : ' + orderId);
-
-        System.debug('Fin de launchDelivery - livraison lancée avec succès pour la commande : ' + orderId);
-    }
 
     // Méthode pour récupérer les commandes prêtes pour la livraison
 @AuraEnabled(cacheable=true)
