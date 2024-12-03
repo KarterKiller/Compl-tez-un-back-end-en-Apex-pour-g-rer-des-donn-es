@@ -16,7 +16,7 @@ public class OrderServiceTest {
             'France'
         );
 
-        Test.startTest();
+        Test.startTest(); // lancer une nouvelle transaction et de reset les gorvernor limits
         Boolean isValid = OrderService.validateOrder(ord.Id);
         Test.stopTest();
 

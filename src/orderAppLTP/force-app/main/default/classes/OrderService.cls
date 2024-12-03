@@ -8,7 +8,7 @@ public with sharing class OrderService {
             throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder aux commandes.');
         }
 
-        // Récupérer l'enregistrement Order avec sous-requête
+        // Récupérer l'enregistrement Order avec sous-requête (mettre une list index.)
         Order orderRecord = [
             SELECT Id, Status, EffectiveDate, AccountId, Transporter__c, 
                 (SELECT Quantity FROM OrderItems)
@@ -89,28 +89,28 @@ public static List<Order> getReadyOrders() {
     ];
 }
 
-    
 @AuraEnabled(cacheable=true)
 public static Account getAccountDetails(Id orderId) {
-    // Récupérer l'enregistrement de commande avec l'ID de compte associé
-    Order orderRecord = [
+    List<Order> orders = [
         SELECT AccountId
         FROM Order
         WHERE Id = :orderId
-        LIMIT 1
     ];
 
-    if (orderRecord != null && orderRecord.AccountId != null) {
-        // Récupérer les détails du compte associé
-        Account accountRecord = [
-            SELECT Id, CustomerType__c
-            FROM Account
-            WHERE Id = :orderRecord.AccountId
-            LIMIT 1
-        ];
-        return accountRecord;
-    } else {
+    if (orders.isEmpty() || orders[0].AccountId == null) {
         throw new AuraHandledException('Aucun compte associé à cette commande.');
     }
- }
+
+    List<Account> accounts = [
+        SELECT Id, CustomerType__c
+        FROM Account
+        WHERE Id = :orders[0].AccountId
+    ];
+
+    if (accounts.isEmpty()) {
+        throw new AuraHandledException('Le compte associé à cette commande n\'existe pas.');
+    }
+
+    return accounts[0];
+    } 
 }

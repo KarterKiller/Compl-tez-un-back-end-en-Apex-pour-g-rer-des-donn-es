@@ -1,24 +1,42 @@
 public class OrderTriggerHandler {
     public static void handleAfterUpdate(List<Order> newOrders, Map<Id, Order> oldOrderMap) {
+        // Liste pour stocker les IDs des commandes ayant changé de statut
+        Set<Id> orderIdsWithStatusChange = new Set<Id>();
 
+        // Déterminer les commandes dont le statut a changé
+        for (Order ord : newOrders) {
+            Order oldOrder = oldOrderMap.get(ord.Id); // Commande précédente
+            if (ord.Status != oldOrder.Status) {
+                orderIdsWithStatusChange.add(ord.Id);
+            }
+        }
+
+        // Si aucune commande n'a changé de statut, arrêter ici
+        if (orderIdsWithStatusChange.isEmpty()) {
+            return;
+        }
+
+        // Récupérer toutes les livraisons associées aux commandes ayant changé de statut
+        List<Delivery__c> relatedDeliveries = [
+            SELECT Id, Status__c, Order__c
+            FROM Delivery__c
+            WHERE Order__c IN :orderIdsWithStatusChange
+        ];
+
+        // Préparer la liste des livraisons à mettre à jour
         List<Delivery__c> deliveriesToUpdate = new List<Delivery__c>();
 
-        for (Order ord : newOrders) { // Liste des commandes mises à jour (newOrders)
-            Order oldOrder = oldOrderMap.get(ord.Id); // Commande précédente enregistrée (oldOrderMap)
+        // Parcourir les livraisons et les associer au nouveau statut de leur commande
+        Map<Id, String> orderStatusMap = new Map<Id, String>();
+        for (Order ord : newOrders) {
+            orderStatusMap.put(ord.Id, ord.Status);
+        }
 
-            // Vérifier si le statut de la commande a changé
-            if (ord.Status != oldOrder.Status) { // vérification si la commande a changé
-                // Récupérer les livraisons associées pour mettre à jour leur statut
-                List<Delivery__c> relatedDeliveries = [
-                    SELECT Id, Status__c
-                    FROM Delivery__c
-                    WHERE Order__c = :ord.Id
-                ];
-
-                for (Delivery__c del : relatedDeliveries) {
-                    del.Status__c = ord.Status;
-                    deliveriesToUpdate.add(del);
-                }
+        for (Delivery__c del : relatedDeliveries) {
+            String newStatus = orderStatusMap.get(del.Order__c);
+            if (del.Status__c != newStatus) { // Mettre à jour uniquement si le statut est différent
+                del.Status__c = newStatus;
+                deliveriesToUpdate.add(del);
             }
         }
 
