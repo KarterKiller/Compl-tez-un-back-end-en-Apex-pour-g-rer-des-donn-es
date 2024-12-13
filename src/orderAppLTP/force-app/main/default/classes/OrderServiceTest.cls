@@ -24,55 +24,63 @@ public class OrderServiceTest {
     }
 
     // Test pour la validation de la méthode launchDelivery
-    @isTest
-    static void testLaunchDelivery() { 
-        Account acc = TestDataFactory.createAccount('Test Account', 'France', 'Technology', 'Hot');
-        
-        // Créer un contrat en statut 'Draft'
-        Contract contract = TestDataFactory.createContract(acc, 12, 'Draft', Date.today());
+@isTest
+static void testLaunchDelivery() { 
+    Account acc = TestDataFactory.createAccount('Test Account', 'France', 'Technology', 'Hot');
+    
+    // Créer un contrat en statut 'Draft'
+    Contract contract = TestDataFactory.createContract(acc, 12, 'Draft', Date.today());
 
-        // Associer le contrat et un Price Book standard à la commande
-        Id standardPricebookId = Test.getStandardPricebookId();
-        Order ord = TestDataFactory.createOrder(acc, contract, 'Draft', Date.today(), 'France', 'France');
-        ord.Pricebook2Id = standardPricebookId;
-        update ord;
+    // Associer le contrat et un Price Book standard à la commande
+    Id standardPricebookId = Test.getStandardPricebookId();
+    Order ord = TestDataFactory.createOrder(acc, contract, 'Draft', Date.today(), 'France', 'France');
+    ord.Pricebook2Id = standardPricebookId;
+    update ord;
 
-        // Activer le contrat après la création de l'ordre
-        contract.Status = 'Activated';
-        update contract;
+    // Activer le contrat après la création de l'ordre
+    contract.Status = 'Activated';
+    update contract;
 
-        // Création d'un produit associé pour activer la commande
-        Product2 product = new Product2(Name = 'Test Product', IsActive = true);
-        insert product;
+    // Création d'un produit associé pour activer la commande
+    Product2 product = new Product2(Name = 'Test Product', IsActive = true);
+    insert product;
 
-        PricebookEntry pricebookEntry = new PricebookEntry(
-            Product2Id = product.Id,
-            Pricebook2Id = standardPricebookId,
-            UnitPrice = 100,
-            IsActive = true
-        );
-        insert pricebookEntry;
+    PricebookEntry pricebookEntry = new PricebookEntry(
+        Product2Id = product.Id,
+        Pricebook2Id = standardPricebookId,
+        UnitPrice = 100,
+        IsActive = true
+    );
+    insert pricebookEntry;
 
-        OrderItem orderItem = new OrderItem(
-            OrderId = ord.Id,
-            Quantity = 1,
-            UnitPrice = 100,
-            PricebookEntryId = pricebookEntry.Id
-        );
-        insert orderItem;
+    OrderItem orderItem = new OrderItem(
+        OrderId = ord.Id,
+        Quantity = 1,
+        UnitPrice = 100,
+        PricebookEntryId = pricebookEntry.Id
+    );
+    insert orderItem;
 
-        // Lancer la livraison
-        Test.startTest();
-        OrderService.launchDelivery(ord.Id);
-        Test.stopTest();
+    // Création d'un transporteur
+    Transporter__c transporter = new Transporter__c(
+        Name = 'Test Transporter',
+        CustomerType__c = 'Particulier'
+    );
+    insert transporter;
 
-        // Vérifications après lancement de la livraison
-        Order updatedOrder = [SELECT Status FROM Order WHERE Id = :ord.Id];
-        System.assertEquals('En livraison', updatedOrder.Status, 'Le statut de la commande devrait être "En livraison".');
+    // Lancer la livraison
+    Test.startTest();
+    OrderService.launchDelivery(ord.Id, transporter.Id); // Appel corrigé
+    Test.stopTest();
 
-        Delivery__c delivery = [SELECT Status__c FROM Delivery__c WHERE Order__c = :ord.Id];
-        System.assertEquals('En cours', delivery.Status__c, 'Le statut de la livraison devrait être "En cours".');
-    }
+    // Vérifications après lancement de la livraison
+    Order updatedOrder = [SELECT Status FROM Order WHERE Id = :ord.Id];
+    System.assertEquals('En livraison', updatedOrder.Status, 'Le statut de la commande devrait être "En livraison".');
+
+    Delivery__c delivery = [SELECT Status__c FROM Delivery__c WHERE Order__c = :ord.Id];
+    System.assertEquals('En cours', delivery.Status__c, 'Le statut de la livraison devrait être "En cours".');
+}
+
 
 
 
@@ -113,9 +121,16 @@ public class OrderServiceTest {
         );
         insert orderItem;
 
+        // Création d'un transporteur
+        Transporter__c transporter = new Transporter__c(
+        Name = 'Test Transporter',
+        CustomerType__c = 'Particulier'
+        );
+        insert transporter;
+
         // Étape 5 : Lancer la livraison
         Test.startTest();
-        OrderService.launchDelivery(ord.Id);
+        OrderService.launchDelivery(ord.Id, transporter.Id);
         Test.stopTest();
 
         // Étape 6 : Vérifier que l'enregistrement de livraison a bien été créé
