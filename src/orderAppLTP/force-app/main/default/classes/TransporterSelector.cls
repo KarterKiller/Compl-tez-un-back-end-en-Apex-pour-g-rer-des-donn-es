@@ -13,10 +13,14 @@ public with sharing class TransporterSelector {
         }
     }
 
-    // Méthode pour récupérer le transporteur avec le prix le plus bas pour un pays donné
-    @AuraEnabled(cacheable=true)
-    public static TransporterDetailsWrapper getCheapestTransporter(String country) {
-        //System.debug('Début de la méthode getCheapestTransporter pour le pays : ' + country);
+     // Méthode pour récupérer le transporteur avec le prix le plus bas pour un pays donné
+     @AuraEnabled(cacheable=true)
+     public static TransporterDetailsWrapper getCheapestTransporter(String country) {
+         // Vérifier les autorisations de lecture sur l'objet Price__c
+         if (!Schema.sObjectType.Price__c.isAccessible()) {
+             throw new AuraHandledException('Vous n\'avez pas les autorisations nécessaires pour accéder aux prix de livraison.');
+         }
+
 
         // Requête pour obtenir le transporteur associé avec le prix de livraison le moins cher dans l'objet Price__c 
         List<Price__c> priceRecords = [
@@ -27,9 +31,9 @@ public with sharing class TransporterSelector {
             LIMIT 1
         ];
 
-        System.debug('Résultats de la requête Price__c : ' + priceRecords);
+        //System.debug('Résultats de la requête Price__c : ' + priceRecords);
 
-        if (!priceRecords.isEmpty() && priceRecords[0].Transporter__c != null) {
+        if (!priceRecords.isEmpty() && priceRecords[0].Transporter__c != null) { // Si aucun enregistrement n'est trouvé dans l'objet Price__c, la valeur de priceRecords[0].Transporter__c est null
             //System.debug('ID du transporteur trouvé : ' + priceRecords[0].Transporter__c);
 
             // Charger le transporteur correspondant via le champ Lookup Transporter__c
@@ -40,7 +44,7 @@ public with sharing class TransporterSelector {
                 LIMIT 1
             ];
 
-            System.debug('Transporter récupéré : ' + transporter);
+            //System.debug('Transporter récupéré : ' + transporter);
 
             // Créer un objet Wrapper contenant les informations à renvoyer
             return new TransporterDetailsWrapper(

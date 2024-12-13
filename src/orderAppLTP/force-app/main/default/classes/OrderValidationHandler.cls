@@ -1,17 +1,17 @@
 public with sharing class OrderValidationHandler {
-    public static void validateOrders(List<Order> orders) {
+    public static void validateOrders(List<Order> orders) { // prendre en paramètre une liste d'objets de type Order
         // Définir le nombre minimum de produits requis pour les différents types de clients
         Integer minProductsForParticulier = 3;
         Integer minProductsForProfessionnel = 5;
 
-        // Liste des erreurs à collecter pour chaque commande
+        // Liste des erreurs à collecter pour chaque commande avec une clé associée à l'ID de la commande pour chaque message d'erreur. 
         Map<Id, String> validationErrors = new Map<Id, String>();
 
-        // Collecter tous les Order.Id et Account.Id nécessaires
-        Set<Id> orderIds = new Set<Id>();
-        Set<Id> accountIds = new Set<Id>();
+        // Initialisation des sets pour stocker les IDs des commandes et des comptes associés. Les Set évitent les doublons et optimise les requêtes SOQL en limitant le nb d'enregistrement à récupérer.
+        Set<Id> orderIds = new Set<Id>(); // Vide au départ. Ex après : {'Order1', 'Order3', 'Order4'}
+        Set<Id> accountIds = new Set<Id>();// Vide au départ. Ex après : {'A001', 'A002'}
 
-        for (Order orderRecord : orders) {
+        for (Order orderRecord : orders) { // Itération sur chaque commande. et va appliquer les cdts.  Si Active, ajoute 'l'ID' au Set OrderIds
             if (orderRecord.Status == 'Activated') {
                 orderIds.add(orderRecord.Id);
             }
@@ -20,7 +20,7 @@ public with sharing class OrderValidationHandler {
             }
         }
 
-        
+        //Récupère tous les articles (OrderItem ) associés aux commandes activées et les stock dans une map. Toujours placer les queries SOQL en dehors de la boucle. 
         Map<Id, List<OrderItem>> orderItemsMap = new Map<Id, List<OrderItem>>();
         for (OrderItem orderItem : [
             SELECT Id, Quantity, OrderId 
@@ -85,9 +85,9 @@ public with sharing class OrderValidationHandler {
             }
         }
 
-        // Relever les erreurs de validation pour les enregistrements non conformes
+        // Itération sur toutes les clés (orderId ) de la Map validationErrors. Retourne un ensemble (Set) de tous les IDs des commandes Order.Id avec des erreurs de validation
         for (Id orderId : validationErrors.keySet()) {
-            Trigger.newMap.get(orderId).addError(validationErrors.get(orderId));
+            Trigger.newMap.get(orderId).addError(validationErrors.get(orderId)); // contient les enregistrements d'objet Order en cours de traitement. 
         }
     }
 }
