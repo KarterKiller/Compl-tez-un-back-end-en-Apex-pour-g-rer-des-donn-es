@@ -156,7 +156,7 @@ static void testLaunchDelivery() {
                     'France'
                 );
         
-                Test.startTest();
+                Test.startTest(); // Utilisé pour garantir que le code fonctionne comme prévu meme avec les limites salesforce. Permet de tester le code dans des conditions proche de la production.
                 Boolean isValid = OrderService.validateOrder(ord.Id);
                 Test.stopTest();
         
@@ -444,5 +444,69 @@ static void testGetReadyOrders_NotActivatedStatus() {
 
     }
 
-} 
+ // Test pour vérifier les autorisations CRUD sur l'objet Order
+ @isTest
+ static void testValidateOrderCRUD() {
+     // Création d'un compte et d'une commande
+     Account acc = new Account(Name = 'Test Account');
+     insert acc;
+
+     Order ord = new Order(
+         Name = 'Test Order',
+         AccountId = acc.Id,
+         Status = 'Draft',
+         EffectiveDate = Date.today(),
+         ShippingCountry = 'France',
+         BillingCountry = 'France'
+     );
+     insert ord;
+
+     // Simulation de validation CRUD pour lecture
+     Test.startTest();
+     try {
+         Boolean isValid = OrderService.validateOrder(ord.Id);
+         System.assertEquals(true, isValid, 'La commande doit être valide avec les autorisations.');
+     } catch (AuraHandledException e) {
+         System.assert(e.getMessage().contains('Vous n\'avez pas les autorisations nécessaires pour accéder aux commandes.'));
+     }
+     Test.stopTest();
+ }
+
+ 
+
+ // Test pour vérifier les autorisations CRUD sur l'objet Account
+ @isTest
+ static void testGetAccountDetailsCRUD() {
+     // Création d'un compte
+     Account acc = new Account(Name = 'Test Account', CustomerType__c = 'Particulier');
+     insert acc;
+
+     // Création d'une commande associée au compte
+     Order ord = new Order(
+         Name = 'Test Order',
+         AccountId = acc.Id,
+         Status = 'Draft',
+         EffectiveDate = Date.today(),
+         ShippingCountry = 'France',
+         BillingCountry = 'France'
+     );
+     insert ord;
+
+     // Simulation de validation CRUD pour lecture
+     Test.startTest();
+     try {
+         Account accountDetails = OrderService.getAccountDetails(ord.Id);
+         System.assertEquals(acc.Id, accountDetails.Id, 'Les détails du compte doivent être récupérés avec succès.');
+     } catch (AuraHandledException e) {
+         System.assert(e.getMessage().contains('Vous n\'avez pas les autorisations nécessaires pour accéder aux comptes.'));
+     }
+     Test.stopTest();
+ }
+}
+
+
+
+
+
+ 
           
